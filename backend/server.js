@@ -5,6 +5,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const morgan = require('morgan');
+const whoamiRouter = require('./api/public/whoami');
 
 require('dotenv').config();
 
@@ -24,6 +25,7 @@ app.use(session({
 }));
 
 app.use('/api/auth', require('./api/public/auth.js'));
+app.use('/api/public/whoami', whoamiRouter);
 app.use(express.static(frontendOutDir));
 
 app.get('*', (req, res) => {
