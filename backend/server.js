@@ -5,6 +5,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const morgan = require('morgan');
+const MongoStore = require('connect-mongo');
 const whoamiRouter = require('./api/public/whoami');
 
 require('dotenv').config();
@@ -21,6 +22,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
+    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
     cookie: { secure: false, maxAge: 3600000 }
 }));
 

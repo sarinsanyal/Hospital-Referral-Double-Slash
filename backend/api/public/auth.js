@@ -54,10 +54,10 @@ authRouter.post('/login', async (req, res) => {
         }
 
         req.session.userId = user._id;
+        req.session.name = user.name;
         req.session.role = user.role;
 
-        res.cookie('user', user.email, { maxAge: 3600000, httpOnly: true });
-        res.status(200).json({ message: 'Login successful', role: req.session.role });
+        res.status(200).json({ message: 'Login successful' });
     } catch (err) {
         return res.status(500).json({ message: err.message });
     }
@@ -68,7 +68,6 @@ authRouter.get('/logout', (req, res) => {
         if (err) {
             return res.status(500).json({ message: 'Could not log out' });
         }
-        res.clearCookie('user');
         res.status(200).json({ message: 'Logout successful' });
     });
 });
