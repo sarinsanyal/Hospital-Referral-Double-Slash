@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Paper, Box, TextField, MenuItem, Stack, Button, Select, InputLabel, FormControl } from '@mui/material';
+import { Paper, Box, TextField, MenuItem, Stack, Button, Select, InputLabel, FormControl, Snackbar, Alert } from '@mui/material';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { MuiTelInput } from 'mui-tel-input';
+import validator from 'validator';
 
 export default function Register() {
     const [phVal, setPhVal] = useState('');
@@ -10,12 +11,15 @@ export default function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [specialty, setSpecialty] = useState('');
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
     const navigate = useNavigate();
 
     useEffect(() => {
         const checkLoggedIn = async () => {
-            const response = await fetch('/api/public/whoami');
+            const response = await fetch('/api/whoami');
             if (response.ok) {
                 const data = await response.json();
                 if (data.loggedIn) {
@@ -26,9 +30,8 @@ export default function Register() {
         checkLoggedIn();
     }, [navigate]);
 
-
     const handlePhChange = (val) => {
-        setPhVal(val);
+        setPhVal(val.replaceAll(" ", ""));
     };
 
     const handleTypeChange = (ev) => {
@@ -37,30 +40,6 @@ export default function Register() {
 
     const handleSpecialtyChange = (ev) => {
         setSpecialty(ev.target.value);
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const response = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                role: userType,
-                name,
-                email,
-                phone: userType === 'patient' ? phVal : undefined,
-                password,
-                specialty: userType === 'doctor' ? specialty : undefined,
-            }),
-        });
-
-        const data = await response.json();
-        alert(data.message);
-        if (response.ok) {
-            navigate('/login');
-        }
     };
 
     const specialties = [
@@ -73,6 +52,93 @@ export default function Register() {
         'Surgery',
         'Urology'
     ];
+
+    const validateFields = () => {
+
+        const nameRegex = /^[A-Za-z\s.]+$/;
+        if (!nameRegex.test(name)) {
+            setSnackbarMessage('Name must contain only English letters and dot(.)');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            return false;
+        }
+
+        if (name.length > 100) {
+            setSnackbarMessage('Name must be 100 characters or less');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            return false;
+        }
+
+        if (!validator.isEmail(email)) {
+            setSnackbarMessage('Invalid email format');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            return false;
+        }
+
+        if (userType === 'doctor' && !specialties.includes(specialty)) {
+            setSnackbarMessage('Specialty is not valid');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            return false;
+        }
+        if (userType === 'patient' && !validator.isMobilePhone(phVal.replaceAll(" ", ""))) {
+            setSnackbarMessage('Invalid phone number format');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            return false;
+        }
+
+        if (password.length < 6) {
+            setSnackbarMessage('Password must be at least 6 characters long');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            return false;
+        }
+
+        return true;
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!validateFields()) return;
+
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    role: userType,
+                    name,
+                    email,
+                    phone: userType === 'patient' ? phVal : undefined,
+                    password,
+                    specialty: userType === 'doctor' ? specialty : undefined,
+                }),
+            });
+
+            const data = await response.json();
+            setSnackbarMessage(data.message);
+            setSnackbarSeverity(response.ok ? 'success' : 'error');
+            setSnackbarOpen(true);
+
+            if (response.ok) {
+                navigate('/login');
+            }
+        } catch (error) {
+            setSnackbarMessage('Error during registration');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+        }
+    };
+
+    const handleCloseSnackbar = () => {
+        setSnackbarOpen(false);
+    };
 
     return (
         <Box sx={{ pt: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -153,6 +219,17 @@ export default function Register() {
                     </Stack>
                 </form>
             </Paper>
+
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }

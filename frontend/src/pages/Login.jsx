@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Paper, Box, TextField, Stack, Button } from '@mui/material';
+import { Paper, Box, TextField, Stack, Button, Snackbar, Alert } from '@mui/material';
 import { NavLink, useNavigate } from 'react-router-dom';
+import validator from 'validator';
 
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState('success');
     const navigate = useNavigate();
 
     useEffect(() => {
         const checkLoggedIn = async () => {
-            const response = await fetch('/api/public/whoami');
+            const response = await fetch('/api/whoami');
             if (response.ok) {
                 const data = await response.json();
                 if (data.loggedIn) {
@@ -20,9 +24,29 @@ export default function Login() {
         checkLoggedIn();
     }, [navigate]);
 
+    const validateFields = () => {
+        if (!validator.isEmail(email)) {
+            setSnackbarMessage('Invalid email address');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            return false;
+        }
+
+        if (password.length < 6) {
+            setSnackbarMessage('Password must be at least 6 characters');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            return false;
+        }
+
+        return true;
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validateFields()) return;
+
         try {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -33,13 +57,22 @@ export default function Login() {
             });
 
             const data = await response.json();
-            alert(data.message);
+            setSnackbarMessage(data.message);
+            setSnackbarSeverity(response.ok ? 'success' : 'error');
+            setSnackbarOpen(true);
+
             if (response.ok) {
                 navigate('/dashboard');
             }
         } catch (error) {
-            alert('Error during login');
+            setSnackbarMessage('Error during login');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
         }
+    };
+
+    const handleCloseSnackbar = () => {
+        setSnackbarOpen(false);
     };
 
     return (
@@ -51,7 +84,7 @@ export default function Login() {
                             label="Email"
                             fullWidth
                             variant="outlined"
-                            type='email'
+                            type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -60,7 +93,7 @@ export default function Login() {
                             label="Password"
                             fullWidth
                             variant="outlined"
-                            type='password'
+                            type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
@@ -72,6 +105,17 @@ export default function Login() {
                     </Stack>
                 </form>
             </Paper>
+
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }

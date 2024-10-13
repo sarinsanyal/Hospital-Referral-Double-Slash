@@ -1,18 +1,16 @@
 const express = require('express');
 const whoamiRouter = express.Router();
 
-whoamiRouter.get('/', (req, res) => {
-    if (req.session.userId) {
+whoamiRouter.get('/whoami', (req, res) => {
+    if (req.session.user) {
         return res.status(200).json({
             loggedIn: true,
-            role: req.session.role,
-            name: req.session.name
+            user: req.session.user
         });
     }
     return res.status(200).json({
         loggedIn: false,
-        role: null,
-        name: null
+        user: null
     });
 });
 

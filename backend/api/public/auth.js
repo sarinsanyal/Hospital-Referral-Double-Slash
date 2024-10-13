@@ -20,22 +20,20 @@ authRouter.post('/register', async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
         const newUser = new User({
             name,
             email,
             phone: role !== 'doctor' ? phone : null,
             specialty: role === 'doctor' ? specialty : null,
-            password: hashedPassword,
+            password: password,
             role
         });
 
         await newUser.save();
         res.status(201).json({ message: 'User registered successfully' });
     } catch (err) {
-        return res.status(500).json({ message: err.message });
+        console.log(err.message);
+        return res.status(500).json({ message: "Something went wrong" });
     }
 });
 
@@ -48,18 +46,26 @@ authRouter.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await user.comparePassword(password);
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        req.session.userId = user._id;
-        req.session.name = user.name;
-        req.session.role = user.role;
+        if (user.role === 'patient') {
+            user.specialty = undefined;
+        }else if(user.role === 'doctor') {
+            user.phone = undefined;
+        }else {
+            user.phone = undefined;
+            user.specialty = undefined;
+        }
+        user.password = undefined;
+        req.session.user = user;
 
         res.status(200).json({ message: 'Login successful' });
     } catch (err) {
-        return res.status(500).json({ message: err.message });
+        console.log(err.message)
+        return res.status(500).json({ message: "Something went wrong" });
     }
 });
 

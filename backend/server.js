@@ -6,7 +6,7 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const morgan = require('morgan');
 const MongoStore = require('connect-mongo');
-const whoamiRouter = require('./api/public/whoami');
+const authMiddleware = require('./middleware/auth');
 
 require('dotenv').config();
 
@@ -26,13 +26,22 @@ app.use(session({
     cookie: { secure: false, maxAge: 3600000 }
 }));
 
+// *
+// public routes 
+// *
 app.use('/api/auth', require('./api/public/auth.js'));
-app.use('/api/public/whoami', whoamiRouter);
+app.use('/api', require('./api/public/whoami.js'));
 app.use(express.static(frontendOutDir));
 
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
 });
+
+// *
+// protected routes
+// *
+app.use('/api/profile', authMiddleware);
+app.use('/api/profile', require('./api/protected/profile.js'));
 
 const startServer = async () => {
     await connectDB();
@@ -41,4 +50,5 @@ const startServer = async () => {
     });
 }
 
+console.log("Booting...");
 startServer();
