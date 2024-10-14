@@ -1,8 +1,8 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
 const User = require('../../db/models/User');
 
 const authRouter = express.Router();
+
 
 authRouter.post('/register', async (req, res) => {
     const { role, name, email, phone, password, specialty } = req.body;
@@ -12,6 +12,16 @@ authRouter.post('/register', async (req, res) => {
         if (!specialty) return res.status(400).json({ message: 'Specialty is required' });
     } else {
         if (!phone) return res.status(400).json({ message: 'Phone number is required' });
+    }
+
+    const allowedCharsRegex = /^[A-Za-z\d@$!%*?&]+$/;
+
+    if (password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    if (!allowedCharsRegex.test(password)) {
+        return res.status(400).json({ message: 'Password can only contain letters, numbers, and the special characters @$!%*?&' });
     }
 
     try {
@@ -37,6 +47,7 @@ authRouter.post('/register', async (req, res) => {
     }
 });
 
+
 authRouter.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -53,13 +64,13 @@ authRouter.post('/login', async (req, res) => {
 
         if (user.role === 'patient') {
             user.specialty = undefined;
-        }else if(user.role === 'doctor') {
+        } else if (user.role === 'doctor') {
             user.phone = undefined;
-        }else {
+        } else {
             user.phone = undefined;
             user.specialty = undefined;
         }
-        user.password = undefined;
+        user.password = '';
         req.session.user = user;
 
         res.status(200).json({ message: 'Login successful' });

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "npm --prefix ./frontend run dev",
+    "devf": "npm --prefix ./frontend run dev",
     "build": "npm --prefix ./frontend run build",
     "start": "npm --prefix ./backend run start",
     "install": "npm install --prefix ./frontend && npm install --prefix ./backend"
@@ -13,6 +13,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "concurrently": "^9.0.1"
+    "concurrently": "^9.0.1",
+    "vercel": "^37.8.0",
+    "yarn": "^1.22.22"
   }
 }

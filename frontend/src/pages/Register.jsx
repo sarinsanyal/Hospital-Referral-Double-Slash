@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Paper, Box, TextField, MenuItem, Stack, Button, Select, InputLabel, FormControl, Snackbar, Alert } from '@mui/material';
+import { Paper, Box, TextField, MenuItem, Stack, Button, Select, InputLabel, FormControl, Snackbar, Alert, IconButton } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { MuiTelInput } from 'mui-tel-input';
 import validator from 'validator';
@@ -90,12 +91,22 @@ export default function Register() {
             return false;
         }
 
+        const allowedCharsRegex = /^[A-Za-z\d@$!%*?&]+$/;
+
         if (password.length < 6) {
             setSnackbarMessage('Password must be at least 6 characters long');
             setSnackbarSeverity('error');
             setSnackbarOpen(true);
             return false;
         }
+
+        if (!allowedCharsRegex.test(password)) {
+            setSnackbarMessage('Password can only contain letters, numbers, and the special characters @$!%*?&');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            return false;
+        }
+
 
         return true;
     };
@@ -141,7 +152,12 @@ export default function Register() {
     };
 
     return (
-        <Box sx={{ pt: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IconButton
+                onClick={() => navigate('/')}
+                sx={{ position: 'absolute', top: 16, left: 16, borderRadius: '12px', borderStyle: 'solid', borderWidth: '1px', borderColor: 'grey.900', color: 'grey.900' }}>
+                <ArrowBackIcon />
+            </IconButton>
             <Paper sx={{ p: 3, maxWidth: '350px', width: '100%' }}>
                 <form onSubmit={handleSubmit}>
                     <Stack spacing={2}>

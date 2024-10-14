@@ -1,44 +1,19 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const validator = require('validator');
-
 
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true,
-        minlength: 2,
-        maxlength: 50,
-        validate: {
-            validator: function (v) {
-
-                return v.length <= 100;
-            },
-            message: 'Name cannot have more than 100 characters.'
-        }
+        required: true
     },
     email: {
         type: String,
         required: true,
-        unique: true,
-        maxlength: 100,
-        validate: {
-            validator: function (v) {
-
-                return validator.isEmail(v);
-            },
-            message: 'Invalid email address.'
-        }
+        unique: true
     },
     phone: {
         type: String,
-        default: null,
-        validate: {
-            validator: function (v) {
-                return v === null || validator.isMobilePhone(v, 'any', { strictMode: true });
-            },
-            message: 'Invalid phone number.'
-        }
+        default: null
     },
     specialty: {
         type: String,
@@ -46,8 +21,7 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
-        minlength: 6
+        required: true
     },
     role: {
         type: String,
