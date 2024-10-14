@@ -20,7 +20,7 @@ export default function Dashboard() {
 
     const checkLoginStatus = async () => {
         try {
-            const response = await fetch("/api/whoami", {
+            const response = await fetch("/apii/whoami", {
                 method: "GET",
                 credentials: "include"
             });
@@ -40,7 +40,7 @@ export default function Dashboard() {
     const handleLogout = async () => {
         setAnchorPFMenu(null);
         try {
-            await fetch("/api/auth/logout", {
+            await fetch("/apii/auth/logout", {
                 method: "GET",
                 credentials: "include"
             });

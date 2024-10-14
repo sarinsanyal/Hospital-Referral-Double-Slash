@@ -14,7 +14,7 @@ export default function Login() {
 
     useEffect(() => {
         const checkLoggedIn = async () => {
-            const response = await fetch('/api/whoami');
+            const response = await fetch('/apii/whoami');
             if (response.ok) {
                 const data = await response.json();
                 if (data.loggedIn) {
@@ -58,7 +58,7 @@ export default function Login() {
         if (!validateFields()) return;
 
         try {
-            const response = await fetch('/api/auth/login', {
+            const response = await fetch('/apii/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

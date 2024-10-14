@@ -29,8 +29,8 @@ app.use(session({
 // *
 // public routes 
 // *
-app.use('/api/auth', require('./api/public/auth.js'));
-app.use('/api', require('./api/public/whoami.js'));
+app.use('/apii/auth', require('./apii/public/auth.js'));
+app.use('/apii', require('./apii/public/whoami.js'));
 app.use(express.static(frontendOutDir));
 
 app.get('*', (req, res) => {
@@ -40,8 +40,8 @@ app.get('*', (req, res) => {
 // *
 // protected routes
 // *
-app.use('/api/profile', authMiddleware);
-app.use('/api/profile', require('./api/protected/profile.js'));
+app.use('/apii/profile', authMiddleware);
+app.use('/apii/profile', require('./apii/protected/profile.js'));
 
 const startServer = async () => {
     await connectDB();

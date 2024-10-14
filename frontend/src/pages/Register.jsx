@@ -20,7 +20,7 @@ export default function Register() {
 
     useEffect(() => {
         const checkLoggedIn = async () => {
-            const response = await fetch('/api/whoami');
+            const response = await fetch('/apii/whoami');
             if (response.ok) {
                 const data = await response.json();
                 if (data.loggedIn) {
@@ -117,7 +117,7 @@ export default function Register() {
         if (!validateFields()) return;
 
         try {
-            const response = await fetch('/api/auth/register', {
+            const response = await fetch('/apii/auth/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

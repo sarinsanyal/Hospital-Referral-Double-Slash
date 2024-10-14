@@ -80,7 +80,7 @@ export default function Profile() {
 
     const checkLoginStatus = async () => {
         try {
-            const response = await fetch('/api/whoami', { credentials: 'include' });
+            const response = await fetch('/apii/whoami', { credentials: 'include' });
             const data = await response.json();
             if (data.loggedIn) {
                 setUser(data.user);
@@ -115,7 +115,7 @@ export default function Profile() {
         }
 
         try {
-            const response = await fetch('/api/profile/updateme', {
+            const response = await fetch('/apii/profile/updateme', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -168,7 +168,7 @@ export default function Profile() {
         formData.append('avatar', file); // Append the file to the formData object
 
         try {
-            const response = await fetch('/api/profile/newavatar', {
+            const response = await fetch('/apii/profile/newavatar', {
                 method: 'PUT',
                 body: formData, // Send formData directly
                 credentials: 'include',
