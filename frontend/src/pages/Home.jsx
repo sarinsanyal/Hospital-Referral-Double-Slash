@@ -40,6 +40,7 @@ export default function Home() {
                     </Toolbar>
                 </AppBar>
             </Box>
+            <h1 style={{textAlign: 'center'}} >Hospital Management App</h1>
         </>
     );
 }

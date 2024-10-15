@@ -1,15 +1,37 @@
 import { useState, useEffect } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
-import { Box, Button, CircularProgress, Typography, AppBar, Toolbar, Avatar, Menu, MenuItem } from "@mui/material";
+import { Box, IconButton, Button, CircularProgress, AppBar, Toolbar, Avatar, Menu, MenuItem } from "@mui/material";
+import { ArrowBackIosNew } from '@mui/icons-material';
+import MenuIcon from '@mui/icons-material/Menu';
+import Tools from './Tools';
 
 export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState({});
+    const [isMenuOpen, setIsMenuOpen] = useState(window.innerWidth >= 500);
+    const [isPhone, setIsPhone] = useState(window.innerWidth < 500);
+    const phoneStyles = isPhone ? { position: 'absolute', bgcolor: 'background.paper', height: '100%' } : {};
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMenuOpen(window.innerWidth >= 500);
+            setIsPhone(window.innerWidth < 500);
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
 
     const [anchorPFMenu, setAnchorPFMenu] = useState(null);
     const openPFMenu = Boolean(anchorPFMenu);
 
+    const toggleMenuOpen = () => {
+        setIsMenuOpen(!isMenuOpen);
+    }
 
     const handlePFClick = (event) => {
         setAnchorPFMenu(event.currentTarget);
@@ -31,7 +53,7 @@ export default function Dashboard() {
                 navigate("/login");
             }
         } catch (error) {
-            // navigate("/login");
+            navigate("/login");
         } finally {
             setLoading(false);
         }
@@ -65,11 +87,10 @@ export default function Dashboard() {
             <Box sx={{ flexGrow: 1 }}>
                 <AppBar position="static" sx={{ bgcolor: 'primary.dark' }}>
                     <Toolbar>
-                        <NavLink to='/' style={{ color: 'inherit', textDecoration: 'none' }}>
-                            <Typography variant="h6" component="div">
-                                Hospital Management
-                            </Typography>
-                        </NavLink>
+                        <Button variant="outlined" color="text" sx={{ minWidth: 0, p: 1 }} onClick={toggleMenuOpen} >
+                            {isMenuOpen ? <ArrowBackIosNew /> : <MenuIcon />}
+                        </Button>
+
                         <Box sx={{ flexGrow: 1 }}></Box>
                         <Avatar
                             alt={user?.name} src={user?.avatar}
@@ -97,9 +118,7 @@ export default function Dashboard() {
                     </Toolbar>
                 </AppBar>
             </Box>
-            <Box sx={{ p: 4 }}>
-                <Typography variant="h4">Hi, {user?.name} &#128075;</Typography>
-            </Box>
+            <Tools isMenuOpen={isMenuOpen} phoneStyles={phoneStyles} />
         </>
     );
 }
