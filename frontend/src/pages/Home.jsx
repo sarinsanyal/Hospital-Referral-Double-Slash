@@ -28,19 +28,19 @@ export default function Home() {
                     <Toolbar>
                         <NavLink to='/' style={{ color: 'inherit', textDecoration: 'none' }}>
                             <Typography variant="h6" component="div">
-                                Hospital Management
+                                Authentication App
                             </Typography>
                         </NavLink>
                         <Box sx={{ flexGrow: 1 }}></Box>
                         {showButton && (
                             <NavLink to={loggedIn ? '/dashboard' : '/login'}>
-                                <Button variant='contained'>{loggedIn ? 'Dashboard' : 'Login'}</Button>
+                                <Button variant='contained' color='success' >{loggedIn ? 'Dashboard' : 'Login'}</Button>
                             </NavLink>
                         )}
                     </Toolbar>
                 </AppBar>
             </Box>
-            <h1 style={{textAlign: 'center'}} >Hospital Management App</h1>
+            <h1 style={{ textAlign: 'center' }} >Authentication App</h1>
         </>
     );
 }
