@@ -2,6 +2,13 @@ const express = require('express');
 const User = require('../../db/models/User');
 
 const router = express.Router();
+const randomPFPs = [
+    "https://i.ibb.co/Vtv8pJM/notion-avatar-1734263349216.png",
+    "https://i.ibb.co/Dzv4Y0f/notion-avatar-1734263083425.png",
+    "https://i.ibb.co/x8WVSt4/notion-avatar-1734263470907.png",
+    "https://i.ibb.co/1K77SBC/notion-avatar-1734263518113.png"
+]
+
 
 
 router.post('/register', async (req, res) => {
@@ -10,6 +17,7 @@ router.post('/register', async (req, res) => {
     name = name.trim();
     username = username.trim();
     password = password.trim();
+    avatar = randomPFPs[Math.floor(Math.random() * randomPFPs.length)];
 
     if (!name || !username || !password) {
         return res.status(400).json({ message: 'All fields are required' });
@@ -48,6 +56,7 @@ router.post('/register', async (req, res) => {
         const newUser = new User({
             name,
             username,
+            avatar,
             password
         });
 
@@ -62,7 +71,7 @@ router.post('/register', async (req, res) => {
 
 
 router.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+    let { username, password } = req.body;
     username = username.trim();
     password = password.trim();
 

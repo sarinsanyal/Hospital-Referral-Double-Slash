@@ -10,7 +10,7 @@ export default function Home() {
 
     useEffect(() => {
         const checkLoggedIn = async () => {
-            const response = await fetch('/apii/whoami');
+            const response = await fetch('/api/whoami');
             if (response.ok) {
                 const data = await response.json();
                 setLoggedIn(data.loggedIn);

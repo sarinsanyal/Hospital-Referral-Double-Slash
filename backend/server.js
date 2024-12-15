@@ -6,7 +6,6 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const morgan = require('morgan');
 const MongoStore = require('connect-mongo');
-const authMiddleware = require('./middleware/auth');
 
 require('dotenv').config();
 
@@ -26,23 +25,17 @@ app.use(session({
     cookie: { secure: false, maxAge: 3600000 }
 }));
 
-// *
-// public routes 
-// *
-app.use('/apii/auth', require('./apii/public/auth.js'));
-app.use('/apii', require('./apii/public/whoami.js'));
-app.use('/apii', require('./apii/public/username.js'));
+// Use the routes from ./api/index.js
+const apiRoutes = require('./api');
+app.use('/api', apiRoutes);
+
+// Serve static files
 app.use(express.static(frontendOutDir));
 
+// Catch-all route to serve the frontend
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
 });
-
-// *
-// protected routes
-// *
-app.use('/apii/profile', authMiddleware);
-app.use('/apii/profile', require('./apii/protected/profile.js'));
 
 const startServer = async () => {
     await connectDB();

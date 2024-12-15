@@ -21,7 +21,7 @@ export default function Login() {
     useEffect(() => {
         const checkLoggedIn = async () => {
             try {
-                const response = await fetch('/apii/whoami');
+                const response = await fetch('/api/whoami');
                 if (response.ok) {
                     const data = await response.json();
                     if (data.loggedIn) {
@@ -90,7 +90,7 @@ export default function Login() {
         setIsLoggingIn(true);
 
         try {
-            const response = await fetch('/apii/auth/login', {
+            const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ export default function Login() {
                 showAlert(data.message, 'success');
                 setTimeout(() => {
                     navigate('/dashboard');
-                }, 2000);
+                }, 1000);
             } else {
                 showAlert(data.message || 'Login failed. Please try again.', 'error');
             }

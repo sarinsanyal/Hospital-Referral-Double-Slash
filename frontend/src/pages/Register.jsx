@@ -36,7 +36,7 @@ export default function Register() {
     useEffect(() => {
         const checkLoggedIn = async () => {
             try {
-                const response = await fetch('/apii/whoami');
+                const response = await fetch('/api/whoami');
                 if (response.ok) {
                     const data = await response.json();
                     if (data.loggedIn) {
@@ -102,7 +102,7 @@ export default function Register() {
             usernameCheckTimeout.current = setTimeout(async () => {
                 setIsCheckingUsername(true);
                 try {
-                    const response = await fetch(`/apii/username?username=${value}`);
+                    const response = await fetch(`/api/username?username=${value}`);
                     const data = await response.json();
                     if (response.ok && data.available) {
                         setIsUniqueUser(true);
@@ -140,7 +140,7 @@ export default function Register() {
 
         // Submit the form
         setIsRegistering(true);
-        fetch('/apii/auth/register', {
+        fetch('/api/auth/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

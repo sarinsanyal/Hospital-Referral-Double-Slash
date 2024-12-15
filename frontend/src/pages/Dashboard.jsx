@@ -1,37 +1,23 @@
 import { useState, useEffect } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
-import { Box, IconButton, Button, CircularProgress, AppBar, Toolbar, Avatar, Menu, MenuItem } from "@mui/material";
-import { ArrowBackIosNew } from '@mui/icons-material';
-import MenuIcon from '@mui/icons-material/Menu';
-import Tools from './Tools';
+import { Box, CircularProgress, AppBar, Toolbar, Avatar, Menu, MenuItem, Divider, ListItemIcon, Snackbar, Alert } from "@mui/material";
+import Logout from '@mui/icons-material/Logout';
+
 
 export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState({});
-    const [isMenuOpen, setIsMenuOpen] = useState(window.innerWidth >= 500);
-    const [isPhone, setIsPhone] = useState(window.innerWidth < 500);
-    const phoneStyles = isPhone ? { position: 'absolute', bgcolor: 'background.paper', height: '100%' } : {};
     const navigate = useNavigate();
-
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMenuOpen(window.innerWidth >= 500);
-            setIsPhone(window.innerWidth < 500);
-        };
-
-        window.addEventListener('resize', handleResize);
-
-        return () => {
-            window.removeEventListener('resize', handleResize);
-        };
-    }, []);
-
     const [anchorPFMenu, setAnchorPFMenu] = useState(null);
-    const openPFMenu = Boolean(anchorPFMenu);
+    const [alert, setAlert] = useState({ open: false, message: '', level: 'info' });
 
-    const toggleMenuOpen = () => {
-        setIsMenuOpen(!isMenuOpen);
-    }
+    const showAlert = (msg, level) => {
+        setAlert({ open: true, message: msg, level });
+    };
+
+    const handleCloseSnackbar = () => {
+        setAlert({ ...alert, open: false });
+    };
 
     const handlePFClick = (event) => {
         setAnchorPFMenu(event.currentTarget);
@@ -42,7 +28,7 @@ export default function Dashboard() {
 
     const checkLoginStatus = async () => {
         try {
-            const response = await fetch("/apii/whoami", {
+            const response = await fetch("/api/whoami", {
                 method: "GET",
                 credentials: "include"
             });
@@ -62,12 +48,20 @@ export default function Dashboard() {
     const handleLogout = async () => {
         setAnchorPFMenu(null);
         try {
-            await fetch("/apii/auth/logout", {
+            const response = await fetch("/api/auth/logout", {
                 method: "GET",
                 credentials: "include"
             });
-            navigate("/login");
-        } catch (error) { }
+            console.log(response)
+            if (response.ok) {
+                navigate("/login");
+            } else {
+                showAlert("Error Logging out. Please try again.", "error");
+            }
+        } catch (error) {
+            console.error("Error logging out:", error);
+            showAlert("Error Logging out. Please try again.", "error");
+        }
     };
 
     useEffect(() => {
@@ -85,40 +79,73 @@ export default function Dashboard() {
     return (
         <>
             <Box sx={{ flexGrow: 1 }}>
-                <AppBar position="static" sx={{ bgcolor: 'primary.dark' }}>
+                <AppBar position="static">
                     <Toolbar>
-                        <Button variant="outlined" color="text" sx={{ minWidth: 0, p: 1 }} onClick={toggleMenuOpen} >
-                            {isMenuOpen ? <ArrowBackIosNew /> : <MenuIcon />}
-                        </Button>
-
                         <Box sx={{ flexGrow: 1 }}></Box>
                         <Avatar
                             alt={user?.name} src={user?.avatar}
                             sx={{ cursor: 'pointer', borderStyle: 'solid', borderWidth: '1px', borderColor: 'grey.900' }}
-                            id="pf-btn"
-                            aria-controls={open ? 'pf-menu' : undefined}
-                            aria-haspopup="true"
-                            aria-expanded={open ? 'true' : undefined}
                             onClick={handlePFClick}
                         />
                         <Menu
-                            id="pf-menu"
                             anchorEl={anchorPFMenu}
-                            open={openPFMenu}
+                            open={!!anchorPFMenu}
                             onClose={handlePFMenuClose}
-                            MenuListProps={{
-                                'aria-labelledby': 'pf-button',
+                            onClick={handlePFMenuClose}
+                            slotProps={{
+                                paper: {
+                                    elevation: 0,
+                                    sx: {
+                                        overflow: 'visible',
+                                        filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                                        mt: 1.5,
+                                        '& .MuiAvatar-root': {
+                                            width: 32,
+                                            height: 32,
+                                            ml: -0.5,
+                                            mr: 1,
+                                        },
+                                        '&::before': {
+                                            content: '""',
+                                            display: 'block',
+                                            position: 'absolute',
+                                            top: 0,
+                                            right: 14,
+                                            width: 10,
+                                            height: 10,
+                                            bgcolor: 'background.paper',
+                                            transform: 'translateY(-50%) rotate(45deg)',
+                                            zIndex: 0,
+                                        },
+                                    },
+                                },
                             }}
+                            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                         >
-                            <MenuItem onClick={handlePFMenuClose}>
-                                <NavLink to="/profile" style={{ color: 'inherit', textDecoration: 'none' }} >Profile</NavLink>
+                            <MenuItem onClick={() => navigate('/profile')}>
+                                <Avatar /> Profile
                             </MenuItem>
-                            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                            <Divider />
+                            <MenuItem onClick={handleLogout}>
+                                <ListItemIcon>
+                                    <Logout fontSize="small" />
+                                </ListItemIcon>
+                                Logout
+                            </MenuItem>
                         </Menu>
                     </Toolbar>
                 </AppBar>
+                <Snackbar
+                    open={alert.open}
+                    autoHideDuration={3000}
+                    onClose={handleCloseSnackbar}
+                >
+                    <Alert onClose={handleCloseSnackbar} severity={alert.level} sx={{ width: '100%' }}>
+                        {alert.message}
+                    </Alert>
+                </Snackbar>
             </Box>
-            <Tools isMenuOpen={isMenuOpen} phoneStyles={phoneStyles} />
         </>
     );
 }
