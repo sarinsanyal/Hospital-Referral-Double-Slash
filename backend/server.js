@@ -31,6 +31,7 @@ app.use(session({
 // *
 app.use('/apii/auth', require('./apii/public/auth.js'));
 app.use('/apii', require('./apii/public/whoami.js'));
+app.use('/apii', require('./apii/public/username.js'));
 app.use(express.static(frontendOutDir));
 
 app.get('*', (req, res) => {

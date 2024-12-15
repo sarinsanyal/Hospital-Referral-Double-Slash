@@ -1,7 +1,7 @@
 const express = require('express');
-const whoamiRouter = express.Router();
+const router = express.Router();
 
-whoamiRouter.get('/whoami', (req, res) => {
+router.get('/whoami', (req, res) => {
     if (req.session.user) {
         return res.status(200).json({
             loggedIn: true,
@@ -14,4 +14,4 @@ whoamiRouter.get('/whoami', (req, res) => {
     });
 });
 
-module.exports = whoamiRouter;
+module.exports = router;

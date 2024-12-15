@@ -8,15 +8,10 @@ const connectDB = async () => {
         const conn = await mongoose.connect(process.env.MONGO_URI);
         console.log(`MongoDB Connected: ${conn.connection.host}`);
 
-        const adminEmail = process.env.ADMIN_MAIL;
         const adminPassword = process.env.ADMIN_PASS;
 
-        if (!adminEmail || !adminPassword) {
-            throw new Error('Admin email or password is missing in environment variables');
-        }
-
-        if (!validator.isEmail(adminEmail)) {
-            throw new Error('Invalid admin email format');
+        if (!adminPassword) {
+            throw new Error('Admin password is missing in environment variables');
         }
 
         const allowedCharsRegex = /^[A-Za-z\d@$!%*?&]+$/;
@@ -33,12 +28,12 @@ const connectDB = async () => {
         const hashedPassword = await bcrypt.hash(adminPassword, salt);
 
         await User.findOneAndUpdate(
-            { email: adminEmail },
-            { name: 'Admin', email: adminEmail, password: hashedPassword, role: 'authority' },
+            { username: 'admin' },
+            { name: 'Admin', password: hashedPassword, username: 'admin' },
             { upsert: true, new: true, setDefaultsOnInsert: true }
         );
 
-        console.log('Authority access configured successfully');
+        console.log('Admin access configured successfully');
 
     } catch (err) {
         console.error(`Error: ${err.message}`);

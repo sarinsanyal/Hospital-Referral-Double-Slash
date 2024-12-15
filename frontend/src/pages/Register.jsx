@@ -1,249 +1,267 @@
-import { useState, useEffect } from 'react';
-import { Paper, Box, TextField, MenuItem, Stack, Button, Select, InputLabel, FormControl, Snackbar, Alert, IconButton } from '@mui/material';
+import { useState, useEffect, useRef } from 'react';
+import { Paper, Box, TextField, Stack, Button, IconButton, CircularProgress, Snackbar, Alert } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { MuiTelInput } from 'mui-tel-input';
-import validator from 'validator';
 
 export default function Register() {
-    const [phVal, setPhVal] = useState('');
-    const [userType, setUserType] = useState('patient');
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [specialty, setSpecialty] = useState('');
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
-    const [snackbarSeverity, setSnackbarSeverity] = useState('success');
-
     const navigate = useNavigate();
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [alert, setAlert] = useState({ open: false, message: '', level: 'info' });
+
+    const showAlert = (msg, level) => {
+        setAlert({ open: true, message: msg, level });
+    };
+
+    const handleClose = () => {
+        setAlert({ ...alert, open: false });
+    };
+
+    const [formData, setFormData] = useState({
+        name: '',
+        username: '',
+        password: ''
+    });
+
+    const [formErrors, setFormErrors] = useState({
+        name: '',
+        username: '',
+        password: ''
+    });
+
+    const [isUniqueUser, setIsUniqueUser] = useState(false);
+    const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+
+    const usernameCheckTimeout = useRef(null);
 
     useEffect(() => {
         const checkLoggedIn = async () => {
-            const response = await fetch('/apii/whoami');
-            if (response.ok) {
-                const data = await response.json();
-                if (data.loggedIn) {
-                    navigate('/dashboard');
+            try {
+                const response = await fetch('/apii/whoami');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.loggedIn) {
+                        navigate('/dashboard');
+                    }
                 }
+            } catch (error) {
+                console.error('Error checking login status:', error);
+                showAlert('Error checking login status. Please try again.', 'error');
             }
         };
         checkLoggedIn();
     }, [navigate]);
 
-    const handlePhChange = (val) => {
-        setPhVal(val.replaceAll(" ", ""));
-    };
 
-    const handleTypeChange = (ev) => {
-        setUserType(ev.target.value);
-    };
-
-    const handleSpecialtyChange = (ev) => {
-        setSpecialty(ev.target.value);
-    };
-
-    const specialties = [
-        'Cardiology',
-        'Dermatology',
-        'Neurology',
-        'Pediatrics',
-        'Psychiatry',
-        'Radiology',
-        'Surgery',
-        'Urology'
-    ];
-
-    const validateFields = () => {
-
-        const nameRegex = /^[A-Za-z\s.]+$/;
-        if (!nameRegex.test(name)) {
-            setSnackbarMessage('Name must contain only English letters and dot(.)');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
-            return false;
-        }
-
-        if (name.length > 100) {
-            setSnackbarMessage('Name must be 100 characters or less');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
-            return false;
-        }
-
-        if (!validator.isEmail(email)) {
-            setSnackbarMessage('Invalid email format');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
-            return false;
-        }
-
-        if (userType === 'doctor' && !specialties.includes(specialty)) {
-            setSnackbarMessage('Specialty is not valid');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
-            return false;
-        }
-        if (userType === 'patient' && !validator.isMobilePhone(phVal.replaceAll(" ", ""))) {
-            setSnackbarMessage('Invalid phone number format');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
-            return false;
-        }
-
-        const allowedCharsRegex = /^[A-Za-z\d@$!%*?&]+$/;
-
-        if (password.length < 6) {
-            setSnackbarMessage('Password must be at least 6 characters long');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
-            return false;
-        }
-
-        if (!allowedCharsRegex.test(password)) {
-            setSnackbarMessage('Password can only contain letters, numbers, and the special characters @$!%*?&');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
-            return false;
-        }
-
-
-        return true;
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (!validateFields()) return;
-
-        try {
-            const response = await fetch('/apii/auth/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    role: userType,
-                    name,
-                    email,
-                    phone: userType === 'patient' ? phVal : undefined,
-                    password,
-                    specialty: userType === 'doctor' ? specialty : undefined,
-                }),
-            });
-
-            const data = await response.json();
-            setSnackbarMessage(data.message);
-            setSnackbarSeverity(response.ok ? 'success' : 'error');
-            setSnackbarOpen(true);
-
-            if (response.ok) {
-                navigate('/login');
+    const validateFields = (field, value) => {
+        if (field === 'name') {
+            const nameRegex = /^[A-Za-z]+(\s[A-Za-z]+)*$/;
+            if (!nameRegex.test(value)) {
+                return 'Name must contain only English letters, and spaces.';
             }
-        } catch (error) {
-            setSnackbarMessage('Error during registration');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
+            if (value.length > 100) {
+                return 'Name must be 100 characters or less';
+            }
+        } else if (field === 'username') {
+            const usernameRegex = /^[A-Za-z0-9_.]+$/;
+            if (value.length < 4) {
+                return 'Username must be atleast 4 characters';
+            }
+            if (!usernameRegex.test(value)) {
+                return 'Username must contain only letters, numbers, _ or .';
+            }
+        } else if (field === 'password') {
+            const allowedCharsRegex = /^[A-Za-z\d@$!%*?&]+$/;
+            if (value.length < 6) {
+                return 'Password must be at least 6 characters long';
+            }
+            if (!allowedCharsRegex.test(value)) {
+                return 'Password can only contain letters, numbers, and the special characters @$!%*?&';
+            }
+        }
+        return '';
+    };
+
+    const handleChange = (field) => (event) => {
+        const value = event.target.value;
+
+        setFormData((prev) => ({ ...prev, [field]: value }));
+
+        const errorMessage = validateFields(field, value);
+        setFormErrors((prev) => ({ ...prev, [field]: errorMessage }));
+
+        if (field === 'username') {
+            // Live format checking
+            if (errorMessage) {
+                setIsUniqueUser(false);
+                clearTimeout(usernameCheckTimeout.current);
+                return;
+            }
+
+            // Trigger unique check after 2 seconds of inactivity
+            clearTimeout(usernameCheckTimeout.current);
+            usernameCheckTimeout.current = setTimeout(async () => {
+                setIsCheckingUsername(true);
+                try {
+                    const response = await fetch(`/apii/username?username=${value}`);
+                    const data = await response.json();
+                    if (response.ok && data.available) {
+                        setIsUniqueUser(true);
+                        setFormErrors((prev) => ({ ...prev, username: '' }));
+                    } else {
+                        setIsUniqueUser(false);
+                        setFormErrors((prev) => ({ ...prev, username: 'Username is already taken.' }));
+                    }
+                } catch (error) {
+                    setIsUniqueUser(false);
+                    setFormErrors((prev) => ({ ...prev, username: 'Error checking username. Please try again.' }));
+                } finally {
+                    setIsCheckingUsername(false);
+                }
+            }, 2000);
         }
     };
 
-    const handleCloseSnackbar = () => {
-        setSnackbarOpen(false);
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        // Check if all fields are valid before submission
+        const nameError = validateFields('name', formData.name);
+        const usernameError = validateFields('username', formData.username);
+        const passwordError = validateFields('password', formData.password);
+
+        if (nameError || usernameError || passwordError || !isUniqueUser) {
+            setFormErrors({
+                name: nameError,
+                username: usernameError,
+                password: passwordError
+            });
+            return;
+        }
+
+        // Submit the form
+        setIsRegistering(true);
+        fetch('/apii/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData),
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                showAlert(result.message, 'success');
+                setTimeout(() => {
+                    navigate('/login');
+                }, 2000);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Something went wrong. Please try again.', 'error');
+            })
+            .finally(() => {
+                setIsRegistering(false);
+            });
     };
 
     return (
-        <Box sx={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <IconButton
                 onClick={() => navigate('/')}
-                sx={{ position: 'absolute', top: 16, left: 16, borderRadius: '12px', borderStyle: 'solid', borderWidth: '1px', borderColor: 'grey.900', color: 'grey.900' }}>
+                sx={{
+                    position: 'absolute',
+                    top: 16,
+                    left: 16,
+                    borderRadius: '12px',
+                    borderStyle: 'solid',
+                    borderWidth: '1px',
+                    borderColor: 'grey.900',
+                    color: 'grey.900'
+                }}
+            >
                 <ArrowBackIcon />
             </IconButton>
             <Paper sx={{ p: 3, maxWidth: '350px', width: '100%' }}>
                 <form onSubmit={handleSubmit}>
                     <Stack spacing={2}>
-                        <Box>
-                            <i>I'm a ?</i>
-                            <Select
-                                sx={{ ml: 2, maxHeight: '2rem' }}
-                                value={userType}
-                                onChange={handleTypeChange}
-                            >
-                                <MenuItem value='patient'>Patient</MenuItem>
-                                <MenuItem value='doctor'>Doctor</MenuItem>
-                            </Select>
-                        </Box>
-
                         <TextField
                             label="Name"
                             fullWidth
                             variant="outlined"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
+                            value={formData.name}
+                            onChange={handleChange('name')}
+                            error={!!formErrors.name}
+                            helperText={formErrors.name}
                         />
-
-                        {userType === 'doctor' && (
-                            <FormControl fullWidth>
-                                <InputLabel>Specialty</InputLabel>
-                                <Select
-                                    value={specialty}
-                                    onChange={handleSpecialtyChange}
-                                    label="Specialty"
-                                    required
-                                >
-                                    {specialties.map((spec) => (
-                                        <MenuItem key={spec} value={spec}>{spec}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        )}
 
                         <TextField
-                            label="Email"
+                            label="Username"
                             fullWidth
                             variant="outlined"
-                            type='email'
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
+                            value={formData.username}
+                            onChange={handleChange('username')}
+                            error={!!formErrors.username}
+                            helperText={
+                                isCheckingUsername
+                                    ? 'Checking username...'
+                                    : formErrors.username
+                            }
+                            slotProps={{
+                                input: {
+                                    endAdornment: isCheckingUsername && <CircularProgress size={20} />,
+                                },
+                            }}
+
+                            disabled={isCheckingUsername}
                         />
-                        {userType === 'patient' && (
-                            <MuiTelInput
-                                label="Ph no."
-                                fullWidth
-                                value={phVal}
-                                onChange={handlePhChange}
-                                required
-                            />
-                        )}
 
                         <TextField
                             label="Password"
                             fullWidth
                             variant="outlined"
-                            type='password'
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
+                            type="password"
+                            value={formData.password}
+                            onChange={handleChange('password')}
+                            error={!!formErrors.password}
+                            helperText={formErrors.password}
                         />
 
-                        <Button type="submit" variant="contained">Register</Button>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={
+                                !formData.name ||
+                                !formData.username ||
+                                !formData.password ||
+                                !!formErrors.name ||
+                                !!formErrors.username ||
+                                !!formErrors.password ||
+                                isCheckingUsername ||
+                                !isUniqueUser
+                            }
+                        >
+                            {!isRegistering ? "Register" : <CircularProgress size={20} />}
+                        </Button>
 
-                        <NavLink to='/login'>
-                            <Button variant="contained" color="secondary" fullWidth>Login</Button>
+                        <NavLink to="/login">
+                            <Button variant="contained" color="secondary" fullWidth>
+                                Login
+                            </Button>
                         </NavLink>
                     </Stack>
                 </form>
             </Paper>
-
             <Snackbar
-                open={snackbarOpen}
+                open={alert.open}
                 autoHideDuration={3000}
-                onClose={handleCloseSnackbar}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                onClose={handleClose}
             >
-                <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
-                    {snackbarMessage}
+                <Alert onClose={handleClose} severity={alert.level} variant="filled">
+                    {alert.message}
                 </Alert>
             </Snackbar>
         </Box>

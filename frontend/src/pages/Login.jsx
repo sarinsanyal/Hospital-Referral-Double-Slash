@@ -1,134 +1,192 @@
 import { useState, useEffect } from 'react';
-import { Paper, Box, TextField, Stack, Button, Snackbar, Alert, IconButton } from '@mui/material';
+import { Paper, Box, TextField, Stack, Button, Snackbar, Alert, IconButton, CircularProgress } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { NavLink, useNavigate } from 'react-router-dom';
-import validator from 'validator';
 
 export default function Login() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
-    const [snackbarSeverity, setSnackbarSeverity] = useState('success');
     const navigate = useNavigate();
+    const [formData, setFormData] = useState({
+        username: '',
+        password: '',
+    });
+
+    const [formErrors, setFormErrors] = useState({
+        username: '',
+        password: '',
+    });
+
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [alert, setAlert] = useState({ open: false, message: '', level: 'info' });
 
     useEffect(() => {
         const checkLoggedIn = async () => {
-            const response = await fetch('/apii/whoami');
-            if (response.ok) {
-                const data = await response.json();
-                if (data.loggedIn) {
-                    navigate('/dashboard');
+            try {
+                const response = await fetch('/apii/whoami');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.loggedIn) {
+                        navigate('/dashboard');
+                    }
                 }
+            } catch (error) {
+                console.error('Error checking login status:', error);
+                showAlert('Error checking login status. Please try again.', 'error');
             }
         };
         checkLoggedIn();
     }, [navigate]);
 
-    const validateFields = () => {
-        if (!validator.isEmail(email)) {
-            setSnackbarMessage('Invalid email address');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
-            return false;
+    const showAlert = (msg, level) => {
+        setAlert({ open: true, message: msg, level });
+    };
+
+    const handleCloseSnackbar = () => {
+        setAlert({ ...alert, open: false });
+    };
+
+    const validateFields = (field, value) => {
+        if (field === 'username') {
+            const usernameRegex = /^[A-Za-z0-9_.]+$/;
+            if (value.length < 4) {
+                return 'Username must be at least 4 characters long.';
+            }
+            if (!usernameRegex.test(value)) {
+                return 'Username can only contain letters, numbers, _ or .';
+            }
+        } else if (field === 'password') {
+            const allowedCharsRegex = /^[A-Za-z\d@$!%*?&]+$/;
+            if (value.length < 6) {
+                return 'Password must be at least 6 characters long.';
+            }
+            if (!allowedCharsRegex.test(value)) {
+                return 'Password can only contain letters, numbers, and the special characters @$!%*?&';
+            }
         }
+        return '';
+    };
 
-        const allowedCharsRegex = /^[A-Za-z\d@$!%*?&]+$/;
-
-        if (password.length < 6) {
-            setSnackbarMessage('Password must be at least 6 characters long');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
-            return false;
-        }
-
-        if (!allowedCharsRegex.test(password)) {
-            setSnackbarMessage('Password can only contain letters, numbers, and the special characters @$!%*?&');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
-            return false;
-        }
-
-        return true;
+    const handleChange = (field) => (event) => {
+        const value = event.target.value;
+        setFormData((prev) => ({ ...prev, [field]: value }));
+        const errorMessage = validateFields(field, value);
+        setFormErrors((prev) => ({ ...prev, [field]: errorMessage }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!validateFields()) return;
+        // Validate fields before submission
+        const usernameError = validateFields('username', formData.username);
+        const passwordError = validateFields('password', formData.password);
+
+        if (usernameError || passwordError) {
+            setFormErrors({
+                username: usernameError,
+                password: passwordError,
+            });
+            return;
+        }
+
+        setIsLoggingIn(true);
 
         try {
             const response = await fetch('/apii/auth/login', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify(formData),
             });
 
             const data = await response.json();
-            setSnackbarMessage(data.message);
-            setSnackbarSeverity(response.ok ? 'success' : 'error');
-            setSnackbarOpen(true);
 
             if (response.ok) {
-                navigate('/dashboard');
+                showAlert(data.message, 'success');
+                setTimeout(() => {
+                    navigate('/dashboard');
+                }, 2000);
+            } else {
+                showAlert(data.message || 'Login failed. Please try again.', 'error');
             }
         } catch (error) {
-            setSnackbarMessage('Error during login');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
+            showAlert('Something went wrong. Please try again.', 'error');
+        } finally {
+            setIsLoggingIn(false);
         }
-    };
-
-    const handleCloseSnackbar = () => {
-        setSnackbarOpen(false);
     };
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh' }}>
             <IconButton
                 onClick={() => navigate('/')}
-                sx={{ position: 'absolute', top: 16, left: 16, borderRadius: '12px', borderStyle: 'solid', borderWidth: '1px', borderColor: 'grey.900', color: 'grey.900' }}>
+                sx={{
+                    position: 'absolute',
+                    top: 16,
+                    left: 16,
+                    borderRadius: '12px',
+                    borderStyle: 'solid',
+                    borderWidth: '1px',
+                    borderColor: 'grey.900',
+                    color: 'grey.900',
+                }}
+            >
                 <ArrowBackIcon />
             </IconButton>
+
             <Paper sx={{ p: 3, maxWidth: '350px', width: '100%' }}>
                 <form onSubmit={handleSubmit}>
                     <Stack spacing={2}>
                         <TextField
-                            label="Email"
+                            label="Username"
                             fullWidth
                             variant="outlined"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
+                            value={formData.username}
+                            onChange={handleChange('username')}
+                            error={!!formErrors.username}
+                            helperText={formErrors.username}
                         />
+
                         <TextField
                             label="Password"
                             fullWidth
                             variant="outlined"
                             type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
+                            value={formData.password}
+                            onChange={handleChange('password')}
+                            error={!!formErrors.password}
+                            helperText={formErrors.password}
                         />
-                        <Button type="submit" variant="contained">Login</Button>
-                        <NavLink to='/register'>
-                            <Button variant="contained" color="secondary" fullWidth>Register</Button>
+
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={
+                                !formData.username ||
+                                !formData.password ||
+                                !!formErrors.username ||
+                                !!formErrors.password ||
+                                isLoggingIn
+                            }
+                        >
+                            {isLoggingIn ? <CircularProgress size={20} /> : 'Login'}
+                        </Button>
+
+                        <NavLink to="/register">
+                            <Button variant="contained" color="secondary" fullWidth>
+                                Register
+                            </Button>
                         </NavLink>
                     </Stack>
                 </form>
             </Paper>
 
             <Snackbar
-                open={snackbarOpen}
+                open={alert.open}
                 autoHideDuration={3000}
                 onClose={handleCloseSnackbar}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
-                <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
-                    {snackbarMessage}
+                <Alert onClose={handleCloseSnackbar} severity={alert.level} sx={{ width: '100%' }}>
+                    {alert.message}
                 </Alert>
             </Snackbar>
         </Box>
