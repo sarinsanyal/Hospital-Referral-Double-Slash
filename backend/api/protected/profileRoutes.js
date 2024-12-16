@@ -25,14 +25,14 @@ router.put('/newavatar', upload.single('avatar'), async (req, res) => {
     }
 
     try {
-        const userId = req.session.user._id;
-        const user = await User.findById(userId);
+        const username = req.session.user.username;
+        const user = await User.findOne({ username });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
         if (!req.file) {
-            return res.status(400).json({ message: 'No file uploaded' });
+            return res.status(400).json({ message: 'No image file found' });
         }
 
         const base64Image = req.file.buffer.toString('base64');
@@ -41,7 +41,7 @@ router.put('/newavatar', upload.single('avatar'), async (req, res) => {
 
         user.avatar = avatarString;
         await user.save();
-        
+
         user.password = '';
         req.session.user.avatar = user.avatar;
         res.status(200).json({ message: 'Avatar updated successfully', user: req.session.user });
@@ -107,6 +107,10 @@ router.put('/updateme', async (req, res) => {
         console.error(error.message);
         res.status(500).json({ message: 'Something went wrong' });
     }
+});
+
+router.get('/test', (req, res) => {
+    res.json({ message: 'Profile routes working' });
 });
 
 module.exports = router;

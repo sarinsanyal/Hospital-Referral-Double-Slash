@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Paper, Box, TextField, Stack, Button, IconButton, CircularProgress, Snackbar, Alert } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { BackBtn } from '../components/CustomMui';
 
 export default function Register() {
     const navigate = useNavigate();
@@ -170,21 +171,7 @@ export default function Register() {
 
     return (
         <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <IconButton
-                onClick={() => navigate('/')}
-                sx={{
-                    position: 'absolute',
-                    top: 16,
-                    left: 16,
-                    borderRadius: '12px',
-                    borderStyle: 'solid',
-                    borderWidth: '1px',
-                    borderColor: 'grey.900',
-                    color: 'grey.900'
-                }}
-            >
-                <ArrowBackIcon />
-            </IconButton>
+            <BackBtn navigate={navigate} />
             <Paper sx={{ p: 3, maxWidth: '350px', width: '100%' }}>
                 <form onSubmit={handleSubmit}>
                     <Stack spacing={2}>

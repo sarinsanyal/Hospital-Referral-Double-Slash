@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react';
-import { Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { AppBar, Box, Toolbar, Typography, Button } from '@mui/material';
+import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';

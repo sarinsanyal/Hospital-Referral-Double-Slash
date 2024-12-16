@@ -18,7 +18,7 @@ router.use('/auth', authRoutes);
 router.use('/', helperRoutes);
 
 // protected
-router.use('/api', authMiddleware, profileRoutes);
+router.use('/profile', authMiddleware, profileRoutes);
 
 module.exports = router;
 

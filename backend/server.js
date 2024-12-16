@@ -25,7 +25,7 @@ app.use(session({
     cookie: { secure: false, maxAge: 3600000 }
 }));
 
-// Use the routes from ./api/index.js
+// Use the routes
 const apiRoutes = require('./api');
 app.use('/api', apiRoutes);
 
@@ -34,7 +34,7 @@ app.use(express.static(frontendOutDir));
 
 // Catch-all route to serve the frontend
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'fallback.html'));
 });
 
 const startServer = async () => {

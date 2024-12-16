@@ -1,82 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, TextField, Stack, CircularProgress, Snackbar, Alert, Avatar, Card, IconButton, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import EditIcon from '@mui/icons-material/Edit';
-import validator from 'validator';
+import { Snackbar, Alert, Box, Typography, Button, IconButton, CircularProgress } from '@mui/material';
+import { DynamicAvatar, BackBtn } from '../components/CustomMui';
+import { Logout } from '@mui/icons-material';
+
 
 export default function Profile() {
-    const [user, setUser] = useState({});
-    const [initialUser, setInitialUser] = useState({});
     const [loading, setLoading] = useState(true);
-    const [editing, setEditing] = useState(false);
-    const [formData, setFormData] = useState({});
-    const [errorMessage, setErrorMessage] = useState('');
-    const [openSnackbar, setOpenSnackbar] = useState(false);
     const navigate = useNavigate();
+    const [user, setUser] = useState({});
+    const [alert, setAlert] = useState({ open: false, message: '', level: 'info' });
 
-    const specialties = [
-        'Cardiology',
-        'Dermatology',
-        'Neurology',
-        'Pediatrics',
-        'Psychiatry',
-        'Radiology',
-        'Surgery',
-        'Urology'
-    ];
-
-    const validateFields = () => {
-        const nameRegex = /^[A-Za-z\s.]+$/;
-
-        if (!nameRegex.test(formData.name)) {
-            setErrorMessage('Name must contain only English letters and dots');
-            setOpenSnackbar(true);
-            return false;
-        }
-
-        if (formData.name.length > 100) {
-            setErrorMessage('Name must be 100 characters or less');
-            setOpenSnackbar(true);
-            return false;
-        }
-
-        if (!validator.isEmail(formData.email)) {
-            setErrorMessage('Invalid email format');
-            setOpenSnackbar(true);
-            return false;
-        }
-
-        const allowedCharsRegex = /^[A-Za-z\d@$!%*?&]+$/;
-
-        if (formData.password) {
-            if (formData.password.length < 6) {
-                setErrorMessage("Password must be at least 6 characters long");
-                setOpenSnackbar(true);
-                return false;
-            }
-
-            if (!allowedCharsRegex.test(formData.password)) {
-                setErrorMessage("Password can only contain letters, numbers, and the special characters @$!%*?&");
-                setOpenSnackbar(true);
-                return false;
-            }
-        }
-
-        if (user.role === 'doctor' && !specialties.includes(formData.specialty)) {
-            setErrorMessage('Specialty is not valid');
-            setOpenSnackbar(true);
-            return false;
-        }
-
-        if (user.role === 'patient' && !validator.isMobilePhone(formData.phone)) {
-            setErrorMessage('Invalid phone number format');
-            setOpenSnackbar(true);
-            return false;
-        }
-
-        return true;
+    const showAlert = (msg, level) => {
+        setAlert({ open: true, message: msg, level });
     };
+
+    const handleCloseSnackbar = () => {
+        setAlert({ ...alert, open: false });
+    };
+
 
     const checkLoginStatus = async () => {
         try {
@@ -84,77 +26,18 @@ export default function Profile() {
             const data = await response.json();
             if (data.loggedIn) {
                 setUser(data.user);
-                setInitialUser(data.user);
-                setFormData(data.user);
             } else {
                 navigate('/login');
             }
-        } catch (error) {
-            setErrorMessage('Failed to fetch user data. Please try again.');
-            setOpenSnackbar(true);
-            navigate('/login');
-        } finally {
             setLoading(false);
-        }
-    };
-
-    const handleInputChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSpecialtyChange = (event) => {
-        setFormData({ ...formData, specialty: event.target.value });
-    };
-
-    const handleSave = async () => {
-        if (!validateFields()) return;
-
-        if (JSON.stringify(formData) === JSON.stringify(initialUser)) {
-            setEditing(false);
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/profile/updateme', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-                credentials: 'include',
-            });
-
-            const result = await response.json();
-            if (response.ok) {
-                setUser(result.user);
-                setInitialUser(result.user);
-                setEditing(false);
-            } else {
-                setErrorMessage(result.message || 'Failed to update profile.');
-                setOpenSnackbar(true);
-            }
         } catch (error) {
-            setErrorMessage('Error updating profile. Please try again.');
-            setOpenSnackbar(true);
+            console.error('Error checking login status:', error);
+            showAlert('Error checking login status.', 'error');
         }
     };
-
-    const handleCancel = () => {
-        setFormData(initialUser);
-        setEditing(false);
-    };
-
     useEffect(() => {
         checkLoginStatus();
     }, []);
-
-    const handleCloseSnackbar = () => {
-        setOpenSnackbar(false);
-    };
-
-    const handleBack = () => {
-        navigate(-1);
-    };
 
     const handleAvatarChange = (event) => {
         const file = event.target.files[0];
@@ -165,142 +48,84 @@ export default function Profile() {
 
     const uploadAvatar = async (file) => {
         const formData = new FormData();
-        formData.append('avatar', file); // Append the file to the formData object
+        formData.append('avatar', file);
 
         try {
             const response = await fetch('/api/profile/newavatar', {
                 method: 'PUT',
-                body: formData, // Send formData directly
+                body: formData,
                 credentials: 'include',
             });
 
             const result = await response.json();
             if (response.ok) {
-                setUser(result.user); // Update user data with new avatar
+                setUser(result.user);
             } else {
-                setErrorMessage(result.message || 'Failed to update avatar.');
-                setOpenSnackbar(true);
+                showAlert(result.message || 'Failed to update avatar.', 'error');
             }
         } catch (error) {
-            setErrorMessage('Error updating avatar. Please try again.');
-            setOpenSnackbar(true);
+            showAlert('Error updating avatar. Please try again.', 'error');
         }
     };
 
+    const handleLogout = async () => {
+        try {
+            const response = await fetch("/api/auth/logout", {
+                method: "GET",
+                credentials: "include"
+            });
+            if (response.ok) {
+                navigate("/login");
+            } else {
+                showAlert("Error Logging out. Please try again.", "error");
+            }
+        } catch (error) {
+            console.error("Error logging out:", error);
+            showAlert("Error Logging out. Please try again.", "error");
+        }
+    };
 
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
                 <CircularProgress />
             </Box>
-        );
+        )
     }
 
     return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-            <IconButton
-                onClick={handleBack}
-                sx={{ position: 'absolute', top: 16, left: 16, borderRadius: '12px', borderStyle: 'solid', borderWidth: '1px', borderColor: 'grey.900', color: 'grey.900' }}>
-                <ArrowBackIcon />
-            </IconButton>
-
-            <Card sx={{ width: 400, padding: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, position: 'relative' }}>
-                    <Avatar
-                        src={user.avatar}
-                        sx={{ width: 100, height: 100, borderStyle: 'solid', borderWidth: '1px', borderColor: 'grey.900' }}
-                    />
-                    <IconButton
-                        component="label"
-                        sx={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            bgcolor: 'grey.500',
-                            opacity: .5,
-                            borderRadius: '50%',
-                            '&:hover': {
-                                opacity: .8,
-                                bgcolor: 'grey.500'
-                            }
-                        }}
+        <>
+            <BackBtn navigate={navigate} />
+            <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }} >
+                <Box sx={{ textAlign: 'center' }} >
+                    <DynamicAvatar src={user.avatar} name={user.name} handleAvatarChange={handleAvatarChange} mb={2} />
+                    <Typography variant="h5" fontWeight="bold">
+                        {user.name}
+                    </Typography>
+                    <Typography variant="subtitle1" color="text.secondary" marginBottom={2}>
+                        {'@' + user.username}
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        startIcon={<Logout />}
+                        onClick={handleLogout}
                     >
-                        <EditIcon />
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleAvatarChange}
-                            hidden
-                        />
-                    </IconButton>
-                </Box>
-                <Stack spacing={2}>
-                    <TextField
-                        label="Name"
-                        name="name"
-                        value={formData.name || ''}
-                        onChange={handleInputChange}
-                        disabled={!editing}
-                        fullWidth
-                    />
-                    <TextField
-                        label="Email"
-                        name="email"
-                        value={formData.email || ''}
-                        onChange={handleInputChange}
-                        disabled={!editing}
-                        fullWidth
-                    />
-                    {user.role === 'doctor' && (
-                        <FormControl fullWidth>
-                            <InputLabel>Specialty</InputLabel>
-                            <Select
-                                value={formData.specialty || ''}
-                                onChange={handleSpecialtyChange}
-                                label="Specialty"
-                                disabled={!editing}
-                            >
-                                {specialties.map((spec) => (
-                                    <MenuItem key={spec} value={spec}>{spec}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    )}
-                    {user.role === 'patient' && (
-                        <TextField
-                            label="Phone"
-                            name="phone"
-                            value={formData.phone || ''}
-                            onChange={handleInputChange}
-                            disabled={!editing}
-                            fullWidth
-                        />
-                    )}
-                    <TextField
-                        label="New Password"
-                        name="password"
-                        value={formData.password || ''}
-                        onChange={handleInputChange}
-                        disabled={!editing}
-                        fullWidth
-                    />
-                    {!editing ? (
-                        <Button variant="contained" onClick={() => setEditing(true)}>Edit</Button>
-                    ) : (
-                        <>
-                            <Button variant="contained" onClick={handleSave}>Save</Button>
-                            <Button variant="outlined" onClick={handleCancel}>Cancel</Button>
-                        </>
-                    )}
-                </Stack>
-            </Card>
+                        Logout
+                    </Button>
 
-            <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-                <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
-                    {errorMessage}
-                </Alert>
-            </Snackbar>
-        </Box>
-    );
+                </Box>
+
+                <Snackbar
+                    open={alert.open}
+                    autoHideDuration={3000}
+                    onClose={handleCloseSnackbar}
+                >
+                    <Alert onClose={handleCloseSnackbar} severity={alert.level} sx={{ width: '100%' }}>
+                        {alert.message}
+                    </Alert>
+                </Snackbar>
+            </Box>
+        </>
+    )
 }

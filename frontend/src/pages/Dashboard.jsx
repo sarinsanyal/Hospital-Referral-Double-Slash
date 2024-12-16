@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, NavLink } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Box, CircularProgress, AppBar, Toolbar, Avatar, Menu, MenuItem, Divider, ListItemIcon, Snackbar, Alert } from "@mui/material";
 import Logout from '@mui/icons-material/Logout';
 
@@ -52,7 +52,6 @@ export default function Dashboard() {
                 method: "GET",
                 credentials: "include"
             });
-            console.log(response)
             if (response.ok) {
                 navigate("/login");
             } else {
@@ -124,7 +123,7 @@ export default function Dashboard() {
                             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                         >
                             <MenuItem onClick={() => navigate('/profile')}>
-                                <Avatar /> Profile
+                                <Avatar alt={user?.name} src={user?.avatar} /> Profile
                             </MenuItem>
                             <Divider />
                             <MenuItem onClick={handleLogout}>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Paper, Box, TextField, Stack, Button, Snackbar, Alert, IconButton, CircularProgress } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { BackBtn } from '../components/CustomMui';
 
 export default function Login() {
     const navigate = useNavigate();
@@ -117,21 +118,7 @@ export default function Login() {
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh' }}>
-            <IconButton
-                onClick={() => navigate('/')}
-                sx={{
-                    position: 'absolute',
-                    top: 16,
-                    left: 16,
-                    borderRadius: '12px',
-                    borderStyle: 'solid',
-                    borderWidth: '1px',
-                    borderColor: 'grey.900',
-                    color: 'grey.900',
-                }}
-            >
-                <ArrowBackIcon />
-            </IconButton>
+            <BackBtn navigate={navigate} />
 
             <Paper sx={{ p: 3, maxWidth: '350px', width: '100%' }}>
                 <form onSubmit={handleSubmit}>
