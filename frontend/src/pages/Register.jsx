@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Paper, Box, TextField, Stack, Button, IconButton, CircularProgress, Snackbar, Alert } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Paper, Box, TextField, Stack, Button, CircularProgress, Snackbar, Alert, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { BackBtn } from '../components/CustomMui';
 
@@ -8,31 +7,30 @@ export default function Register() {
     const navigate = useNavigate();
     const [isRegistering, setIsRegistering] = useState(false);
     const [alert, setAlert] = useState({ open: false, message: '', level: 'info' });
-
-    const showAlert = (msg, level) => {
-        setAlert({ open: true, message: msg, level });
-    };
-
-    const handleClose = () => {
-        setAlert({ ...alert, open: false });
-    };
+    const [userType, setUserType] = useState('patient'); // Default to patient
+    const [isUniqueUser, setIsUniqueUser] = useState(false);
+    const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+    const usernameCheckTimeout = useRef(null);
 
     const [formData, setFormData] = useState({
+        userType: 'patient', // Default value
         name: '',
+        age: '', // Only for patient
+        totalBeds: '', // Only for hospital
+        emptyBeds: '', // Only for hospital
         username: '',
         password: ''
     });
 
     const [formErrors, setFormErrors] = useState({
         name: '',
+        age: '',
+        totalBeds: '',
+        emptyBeds: '',
         username: '',
         password: ''
     });
 
-    const [isUniqueUser, setIsUniqueUser] = useState(false);
-    const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-
-    const usernameCheckTimeout = useRef(null);
 
     useEffect(() => {
         const checkLoggedIn = async () => {
@@ -53,19 +51,68 @@ export default function Register() {
     }, [navigate]);
 
 
+    const showAlert = (msg, level) => {
+        setAlert({ open: true, message: msg, level });
+    };
+
+    const handleClose = () => {
+        setAlert({ ...alert, open: false });
+    };
+
+
     const validateFields = (field, value) => {
-        if (field === 'name') {
-            const nameRegex = /^[A-Za-z]+(\s[A-Za-z]+)*$/;
-            if (!nameRegex.test(value)) {
-                return 'Name must contain only English letters, and spaces.';
+        if (userType === 'patient') {
+            if (field === 'name') {
+                const nameRegex = /^[A-Za-z]+(\s[A-Za-z]+)*$/;
+                if (!nameRegex.test(value)) {
+                    return 'Name must contain only English letters, and spaces.';
+                }
+                if (value.length > 100) {
+                    return 'Name must be 100 characters or less';
+                }
+            } else if (field === 'age') {
+                if (!value) {
+                    return 'Age is required';
+                }
+                const age = parseInt(value, 10);
+                if (isNaN(age) || age <= 0 || age > 120) {
+                    return 'Age must be a valid number between 1 and 120.';
+                }
             }
-            if (value.length > 100) {
-                return 'Name must be 100 characters or less';
+        } else if (userType === 'hospital') {
+            if (field === 'name') {
+                if (!value) {
+                    return 'Hospital name is required.';
+                }
+                if (value.length > 100) {
+                    return 'Hospital name must be 100 characters or less.';
+                }
+            } else if (field === 'totalBeds') {
+                if (!value) {
+                    return 'Total beds is required.';
+                }
+                const beds = parseInt(value, 10);
+                if (isNaN(beds) || beds <= 0) {
+                    return 'Total beds must be a valid number greater than 0.';
+                }
+            } else if (field === 'emptyBeds') {
+                if (!value) {
+                    return 'Empty beds is required.';
+                }
+                const empty = parseInt(value, 10);
+                if (isNaN(empty) || empty < 0) {
+                    return 'Empty beds must be a valid number greater than or equal to 0.';
+                }
+                if (parseInt(formData.totalBeds, 10) < empty) {
+                    return 'Empty beds cannot be greater than total beds.';
+                }
             }
-        } else if (field === 'username') {
+        }
+
+        if (field === 'username') {
             const usernameRegex = /^[A-Za-z0-9_.]+$/;
             if (value.length < 4) {
-                return 'Username must be atleast 4 characters';
+                return 'Username must be at least 4 characters';
             }
             if (!usernameRegex.test(value)) {
                 return 'Username must contain only letters, numbers, _ or .';
@@ -120,24 +167,67 @@ export default function Register() {
                 }
             }, 2000);
         }
+
+        if (field === 'totalBeds') {
+            if (formData.emptyBeds && parseInt(value, 10) < parseInt(formData.emptyBeds, 10)) {
+                setFormErrors((prev) => ({ ...prev, emptyBeds: 'Empty beds cannot be greater than total beds.' }));
+            } else {
+                setFormErrors((prev) => ({ ...prev, emptyBeds: '' }));
+            }
+        } else if (field === 'emptyBeds') {
+            if (formData.totalBeds && parseInt(formData.totalBeds, 10) < parseInt(value, 10)) {
+                setFormErrors((prev) => ({ ...prev, emptyBeds: 'Empty beds cannot be greater than total beds.' }));
+            } else {
+                setFormErrors((prev) => ({ ...prev, emptyBeds: '' }));
+            }
+        }
     };
+
+    const handleUserTypeChange = (event) => {
+        setUserType(event.target.value);
+        setFormData(prev => ({
+            ...prev,
+            userType: event.target.value,
+            name: '',
+            age: '',
+            totalBeds: '',
+            emptyBeds: '',
+            username: '',
+            password: ''
+        }));
+        setFormErrors({
+            name: '',
+            age: '',
+            totalBeds: '',
+            emptyBeds: '',
+            username: '',
+            password: ''
+        });
+    };
+
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        // Check if all fields are valid before submission
-        const nameError = validateFields('name', formData.name);
-        const usernameError = validateFields('username', formData.username);
-        const passwordError = validateFields('password', formData.password);
+        // Validate all fields before submission
+        let errors = {};
+        for (const key in formData) {
+            if (key !== 'userType') {
+                errors[key] = validateFields(key, formData[key]);
+            }
+        }
 
-        if (nameError || usernameError || passwordError || !isUniqueUser) {
-            setFormErrors({
-                name: nameError,
-                username: usernameError,
-                password: passwordError
-            });
+        setFormErrors(errors);
+
+        if (Object.values(errors).some(error => error)) {
             return;
         }
+
+
+        // Prepare the data to send to the server
+        const payload = {
+            ...formData,
+        };
 
         // Submit the form
         setIsRegistering(true);
@@ -146,7 +236,7 @@ export default function Register() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(formData),
+            body: JSON.stringify(payload),
         })
             .then(response => {
                 if (!response.ok) {
@@ -169,21 +259,80 @@ export default function Register() {
             });
     };
 
+
     return (
         <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <BackBtn navigate={navigate} />
-            <Paper sx={{ p: 3, maxWidth: '350px', width: '100%' }}>
+            <Paper sx={{ p: 3, maxWidth: '400px', width: '100%' }}>
                 <form onSubmit={handleSubmit}>
                     <Stack spacing={2}>
+
+                        <FormControl fullWidth>
+                            <InputLabel id="user-type-label">Registering as</InputLabel>
+                            <Select
+                                labelId="user-type-label"
+                                id="user-type"
+                                value={userType}
+                                label="Registering as"
+                                onChange={handleUserTypeChange}
+                            >
+                                <MenuItem value={'patient'}>Patient</MenuItem>
+                                <MenuItem value={'hospital'}>Hospital</MenuItem>
+                            </Select>
+                        </FormControl>
+
+
                         <TextField
-                            label="Name"
+                            label={userType === 'patient' ? "Patient Name" : "Hospital Name"}
                             fullWidth
                             variant="outlined"
                             value={formData.name}
                             onChange={handleChange('name')}
                             error={!!formErrors.name}
                             helperText={formErrors.name}
+                            required
                         />
+
+                        {userType === 'patient' && (
+                            <TextField
+                                label="Age"
+                                fullWidth
+                                variant="outlined"
+                                type="number"
+                                value={formData.age}
+                                onChange={handleChange('age')}
+                                error={!!formErrors.age}
+                                helperText={formErrors.age}
+                                required
+                            />
+                        )}
+
+                        {userType === 'hospital' && (
+                            <>
+                                <TextField
+                                    label="Total Number of Beds"
+                                    fullWidth
+                                    variant="outlined"
+                                    type="number"
+                                    value={formData.totalBeds}
+                                    onChange={handleChange('totalBeds')}
+                                    error={!!formErrors.totalBeds}
+                                    helperText={formErrors.totalBeds}
+                                    required
+                                />
+                                <TextField
+                                    label="Currently Empty Beds"
+                                    fullWidth
+                                    variant="outlined"
+                                    type="number"
+                                    value={formData.emptyBeds}
+                                    onChange={handleChange('emptyBeds')}
+                                    error={!!formErrors.emptyBeds}
+                                    helperText={formErrors.emptyBeds}
+                                    required
+                                />
+                            </>
+                        )}
 
                         <TextField
                             label="Username"
@@ -197,13 +346,11 @@ export default function Register() {
                                     ? 'Checking username...'
                                     : formErrors.username
                             }
-                            slotProps={{
-                                input: {
-                                    endAdornment: isCheckingUsername && <CircularProgress size={20} />,
-                                },
+                            InputProps={{
+                                endAdornment: isCheckingUsername ? <CircularProgress size={20} /> : null,
                             }}
-
                             disabled={isCheckingUsername}
+                            required
                         />
 
                         <TextField
@@ -215,18 +362,20 @@ export default function Register() {
                             onChange={handleChange('password')}
                             error={!!formErrors.password}
                             helperText={formErrors.password}
+                            required
                         />
 
                         <Button
                             type="submit"
                             variant="contained"
                             disabled={
+                                isRegistering ||
+                                Object.values(formErrors).some(error => error) ||
                                 !formData.name ||
                                 !formData.username ||
                                 !formData.password ||
-                                !!formErrors.name ||
-                                !!formErrors.username ||
-                                !!formErrors.password ||
+                                (userType === 'patient' && !formData.age) ||
+                                (userType === 'hospital' && (!formData.totalBeds || !formData.emptyBeds)) ||
                                 isCheckingUsername ||
                                 !isUniqueUser
                             }

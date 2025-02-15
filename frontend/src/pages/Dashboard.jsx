@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, CircularProgress, AppBar, Toolbar, Avatar, Menu, MenuItem, Divider, ListItemIcon, Snackbar, Alert } from "@mui/material";
+import { Box, CircularProgress, AppBar, Toolbar, Avatar, Menu, MenuItem, Divider, ListItemIcon, Snackbar, Alert, Typography } from "@mui/material";
 import Logout from '@mui/icons-material/Logout';
 
 
@@ -80,7 +80,9 @@ export default function Dashboard() {
             <Box sx={{ flexGrow: 1 }}>
                 <AppBar position="static">
                     <Toolbar>
-                        <Box sx={{ flexGrow: 1 }}></Box>
+                        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                            Hi {user?.name} ! Logged in as {user?.userType}
+                        </Typography>
                         <Avatar
                             alt={user?.name} src={user?.avatar}
                             sx={{ cursor: 'pointer', borderStyle: 'solid', borderWidth: '1px', borderColor: 'grey.900' }}

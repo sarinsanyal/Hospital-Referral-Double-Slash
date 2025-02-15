@@ -10,18 +10,29 @@ const randomPFPs = [
 ]
 
 
-
 router.post('/register', async (req, res) => {
-    let { name, username, password } = req.body;
+    let { userType, name, username, password, age, totalBeds, emptyBeds } = req.body;
 
     name = name.trim();
     username = username.trim();
     password = password.trim();
-    avatar = randomPFPs[Math.floor(Math.random() * randomPFPs.length)];
+
+    if (!userType || !['patient', 'hospital'].includes(userType)) {
+        return res.status(400).json({ message: 'User type is required and must be patient or hospital.' });
+    }
 
     if (!name || !username || !password) {
-        return res.status(400).json({ message: 'All fields are required' });
+        return res.status(400).json({ message: 'Name, username, and password are required' });
     }
+
+    if (userType === 'patient' && !age) {
+        return res.status(400).json({ message: 'Age is required for patients.' });
+    }
+
+    if (userType === 'hospital' && (!totalBeds || !emptyBeds)) {
+        return res.status(400).json({ message: 'Total beds and empty beds are required for hospitals.' });
+    }
+
 
     const nameRegex = /^[A-Za-z]+(\s[A-Za-z]+)*$/;
     if (!nameRegex.test(name)) {
@@ -47,17 +58,45 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ message: 'Password can only contain letters, numbers, and the special characters @$!%*?&.' });
     }
 
+
+    if (userType === 'patient') {
+        const ageNumber = parseInt(age, 10);
+        if (isNaN(ageNumber) || ageNumber <= 0 || ageNumber > 120) {
+            return res.status(400).json({ message: 'Age must be a valid number between 1 and 120.' });
+        }
+    }
+
+    if (userType === 'hospital') {
+        const totalBedsNumber = parseInt(totalBeds, 10);
+        const emptyBedsNumber = parseInt(emptyBeds, 10);
+
+        if (isNaN(totalBedsNumber) || totalBedsNumber <= 0) {
+            return res.status(400).json({ message: 'Total beds must be a valid number greater than 0.' });
+        }
+        if (isNaN(emptyBedsNumber) || emptyBedsNumber < 0) {
+            return res.status(400).json({ message: 'Empty beds must be a valid number greater than or equal to 0.' });
+        }
+        if (emptyBedsNumber > totalBedsNumber) {
+            return res.status(400).json({ message: 'Empty beds cannot be greater than total beds.' });
+        }
+    }
+
+
     try {
         const existingUser = await User.findOne({ username });
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
+        let avatar = randomPFPs[Math.floor(Math.random() * randomPFPs.length)];
+
         const newUser = new User({
+            userType,
             name,
             username,
-            avatar,
-            password
+            password,
+            ...(userType === 'patient' ? { age } : { totalBeds, emptyBeds }),
+            avatar //everyone has avatar
         });
 
         await newUser.save();
@@ -107,7 +146,12 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Wrong password!' });
         }
 
-        req.session.user = { username: user.username, name: user.name, avatar: user.avatar };
+        req.session.user = {
+            username: user.username,
+            name: user.name,
+            avatar: user.avatar,
+            userType: user.userType // Store userType in session
+        };
 
         res.status(200).json({ message: 'Login successful' });
     } catch (err) {

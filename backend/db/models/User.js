@@ -2,9 +2,30 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
+    userType: {
+        type: String,
+        enum: ['patient', 'hospital'],
+        required: true
+    },
     name: {
         type: String,
         required: true
+    },
+    age: {  // Only for patients
+        type: Number,
+        required: function () { return this.userType === 'patient'; },
+        min: 0,
+        max: 120
+    },
+    totalBeds: {  // Only for hospitals
+        type: Number,
+        required: function () { return this.userType === 'hospital'; },
+        min: 0
+    },
+    emptyBeds: {  // Only for hospitals
+        type: Number,
+        required: function () { return this.userType === 'hospital'; },
+        min: 0
     },
     username: {
         type: String,
