@@ -10,6 +10,8 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const [anchorPFMenu, setAnchorPFMenu] = useState(null);
     const [alert, setAlert] = useState({ open: false, message: '', level: 'info' });
+    const [hospitals, setHospitals] = useState([]);
+    const [requestedHosp, setRequestedHosp] = useState("");
 
     const showAlert = (msg, level) => {
         setAlert({ open: true, message: msg, level });
@@ -63,9 +65,60 @@ export default function Dashboard() {
         }
     };
 
+    const fetchHospitals = async () => {
+        try {
+            const response = await fetch("/api/data/hospitals", {
+                method: "GET",
+                credentials: "include"
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setHospitals(data);
+            } else {
+                showAlert("Error fetching hospitals. Please try again.", "error");
+            }
+        } catch (error) {
+            console.error("Error fetching:", error);
+            showAlert("Error fetching. Please try again.", "error");
+        }
+    }
+
+    const requestHospital = async (to) => {
+        try {
+            const response = await fetch("/api/data/request", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ to: to })
+            });
+            console.log(response)
+            if (response.ok) {
+                const data = await response.json();
+                setRequestedHosp(to);
+                showAlert(data.message, "success");
+            } else {
+                showAlert("Error requesting hospital. Please try again.", "error");
+            }
+        } catch (error) {
+            console.error("Error requesting:", error);
+            showAlert("Error requesting. Please try again.", "error");
+        }
+    }
+
     useEffect(() => {
         checkLoginStatus();
     }, []);
+
+    useEffect(() => {
+        if (user.userType == 'patient') {
+            fetchHospitals();
+            console.log(user);
+            if (user.state === "pending") {
+                setRequestedHosp(user.to);
+            }
+        }
+    }, [user]);
 
     if (loading) {
         return (
@@ -81,7 +134,7 @@ export default function Dashboard() {
                 <AppBar position="static">
                     <Toolbar>
                         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                            Hi {user?.name} ! Logged in as {user?.userType}
+                            Hi {user?.name}!
                         </Typography>
                         <Avatar
                             alt={user?.name} src={user?.avatar}
@@ -137,6 +190,15 @@ export default function Dashboard() {
                         </Menu>
                     </Toolbar>
                 </AppBar>
+                <Box sx={{
+                    p: 4
+                }}>
+                    <ul>
+                        {hospitals.map((hospital, index) => (
+                            <li key={index}>{hospital.name} <button onClick={() => { requestHospital(hospital.username) }} disabled={requestedHosp === hospital.username}>Request</button><button>cancel</button></li>
+                        ))}
+                    </ul>
+                </Box>
                 <Snackbar
                     open={alert.open}
                     autoHideDuration={3000}

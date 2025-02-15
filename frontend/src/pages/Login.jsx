@@ -118,7 +118,7 @@ export default function Login() {
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh' }}>
-            <BackBtn navigate={navigate} />
+            <BackBtn to={"/"} />
 
             <Paper sx={{ p: 3, maxWidth: '350px', width: '100%' }}>
                 <form onSubmit={handleSubmit}>

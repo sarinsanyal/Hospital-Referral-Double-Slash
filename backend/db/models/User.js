@@ -39,6 +39,16 @@ const userSchema = new mongoose.Schema({
     avatar: {
         type: String,
         default: null
+    },
+    state: {
+        type: String
+    },
+    to: {
+        type: String
+    },
+    requests: {
+        type: [String],
+        default: []
     }
 });
 

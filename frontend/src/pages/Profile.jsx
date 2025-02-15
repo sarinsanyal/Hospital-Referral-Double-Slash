@@ -95,7 +95,7 @@ export default function Profile() {
 
     return (
         <>
-            <BackBtn navigate={navigate} />
+            <BackBtn to={"/dashboard"} />
             <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }} >
                 <Box sx={{ textAlign: 'center' }} >
                     <DynamicAvatar src={user.avatar} name={user.name} handleAvatarChange={handleAvatarChange} mb={2} />

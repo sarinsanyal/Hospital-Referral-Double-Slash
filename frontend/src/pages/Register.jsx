@@ -262,7 +262,7 @@ export default function Register() {
 
     return (
         <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <BackBtn navigate={navigate} />
+            <BackBtn to={"/"} />
             <Paper sx={{ p: 3, maxWidth: '400px', width: '100%' }}>
                 <form onSubmit={handleSubmit}>
                     <Stack spacing={2}>

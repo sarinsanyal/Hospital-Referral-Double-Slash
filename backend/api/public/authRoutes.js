@@ -33,11 +33,12 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ message: 'Total beds and empty beds are required for hospitals.' });
     }
 
-
-    const nameRegex = /^[A-Za-z]+(\s[A-Za-z]+)*$/;
-    if (!nameRegex.test(name)) {
-        return res.status(400).json({ message: 'Name must contain only English letters and spaces.' });
-    }
+    // No need a validation for name
+    // const nameRegex = /^[A-Za-z]+(\s[A-Za-z]+)*$/;
+    // if (!nameRegex.test(name)) {
+    //     return res.status(400).json({ message: 'Name must contain only English letters and spaces.' });
+    // }
+    
     if (name.length > 100) {
         return res.status(400).json({ message: 'Name must be 100 characters or less.' });
     }

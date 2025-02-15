@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Avatar, IconButton } from '@mui/material';
 import { Edit, ArrowBack } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
 
 const DynamicAvatar = ({ src, name, handleAvatarChange, mb = 0 }) => {
@@ -42,10 +43,11 @@ const DynamicAvatar = ({ src, name, handleAvatarChange, mb = 0 }) => {
     );
 };
 
-const BackBtn = ({ navigate }) => {
+const BackBtn = ({ to }) => {
+    const navigate = useNavigate();
     return (
         <IconButton
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(to)}
             sx={{
                 position: 'absolute',
                 top: 16,
